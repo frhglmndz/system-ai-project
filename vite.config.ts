@@ -5,6 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  build: {
+  assetsInlineLimit: 0, // prevents auto favicon embedding
+},
   server: {
     host: "::",
     port: 8080,
