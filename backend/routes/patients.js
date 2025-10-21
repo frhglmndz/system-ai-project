@@ -1,48 +1,54 @@
-/**
- ## Patient Endpoints
+const express = require('express');
+const db = require('../db');
+const { authMiddleware, doctorOnly } = require('../middleware/auth');
 
-### GET /patients
-Get all patients (doctor only)
-```json
-Response: 200
-[
-  {
-    "id": "uuid",
-    "userId": "uuid",
-    "firstName": "John",
-    "lastName": "Doe",
-    "recoveryProgress": 75,
-    "dischargeDate": "2024-01-15"
+const router = express.Router();
+
+// Get all patients (doctor only)
+router.get('/', authMiddleware, doctorOnly, async (req, res) => {
+  try {
+    const [patients] = await db.query(`
+      SELECT p.*, pr.first_name, pr.last_name 
+      FROM patients p
+      JOIN profiles pr ON p.user_id = pr.user_id
+    `);
+    res.json(patients);
+  } catch (error) {
+    console.error('Get patients error:', error);
+    res.status(500).json({ error: 'Failed to get patients' });
   }
-]
-```
+});
 
-### GET /patients/:id
-Get patient details (doctor or own patient record)
-```json
-Response: 200
-{
-  "id": "uuid",
-  "userId": "uuid",
-  "doctorId": "uuid",
-  "bloodType": "O+",
-  "allergies": "None",
-  "medicalConditions": "Post-surgery",
-  "recoveryProgress": 75
-}
-```
+// Get patient by ID
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const [patients] = await db.query('SELECT * FROM patients WHERE id = ?', [req.params.id]);
+    if (patients.length === 0) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    res.json(patients[0]);
+  } catch (error) {
+    console.error('Get patient error:', error);
+    res.status(500).json({ error: 'Failed to get patient' });
+  }
+});
 
-### PUT /patients/:id
-Update patient info (doctor only)
-```json
-Request:
-{
-  "doctorId": "uuid",
-  "recoveryProgress": 80,
-  "medicalConditions": "Recovering well"
-}
+// Update patient (doctor only)
+router.put('/:id', authMiddleware, doctorOnly, async (req, res) => {
+  try {
+    const { doctorId, bloodType, allergies, medicalConditions, recoveryProgress } = req.body;
+    
+    await db.query(
+      'UPDATE patients SET doctor_id = ?, blood_type = ?, allergies = ?, medical_conditions = ?, recovery_progress = ? WHERE id = ?',
+      [doctorId, bloodType, allergies, medicalConditions, recoveryProgress, req.params.id]
+    );
 
-Response: 200
-{ "message": "Patient updated", "patient": {...} }
-```
- */
+    const [patients] = await db.query('SELECT * FROM patients WHERE id = ?', [req.params.id]);
+    res.json({ message: 'Patient updated', patient: patients[0] });
+  } catch (error) {
+    console.error('Update patient error:', error);
+    res.status(500).json({ error: 'Failed to update patient' });
+  }
+});
+
+module.exports = router;

@@ -1,10 +1,11 @@
 {
-  "name": "backend",
+  "name": "patient-recovery-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Node.js/Express backend for Patient Recovery System",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +16,8 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.15.2"
+    "mysql2": "^3.15.2",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

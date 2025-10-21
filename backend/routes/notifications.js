@@ -1,27 +1,29 @@
-/*
+const express = require('express');
+const db = require('../db');
+const { authMiddleware } = require('../middleware/auth');
 
-## Notifications Endpoints
+const router = express.Router();
 
-### GET /notifications
-Get user notifications
-```json
-Response: 200
-[
-  {
-    "id": "uuid",
-    "title": "Medication Reminder",
-    "message": "Time to take Aspirin",
-    "type": "reminder",
-    "isRead": false,
-    "createdAt": "2024-01-20T10:00:00Z"
+// Get notifications
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const [notifications] = await db.query('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC', [req.userId]);
+    res.json(notifications);
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    res.status(500).json({ error: 'Failed to get notifications' });
   }
-]
-```
+});
 
-### PUT /notifications/:id/read
-Mark notification as read
-```json
-Response: 200
-{ "message": "Marked as read" }
-```
-*/
+// Mark notification as read
+router.put('/:id/read', authMiddleware, async (req, res) => {
+  try {
+    await db.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [req.params.id]);
+    res.json({ message: 'Marked as read' });
+  } catch (error) {
+    console.error('Mark notification error:', error);
+    res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
+module.exports = router;
