@@ -1,13 +1,54 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { api } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
-  const recoveryScore = 65;
-  const stats = [
-    { label: "Medication", value: 90, color: "bg-secondary" },
-    { label: "Appointments", value: 95, color: "bg-secondary" },
-    { label: "Exercises", value: 70, color: "bg-secondary" },
+  const [stats, setStats] = useState({
+    recoveryProgress: 0,
+    medicationsTaken: 0,
+    totalMedications: 0,
+    upcomingAppointments: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await api.getDashboardStats();
+        setStats(data);
+      } catch (error: any) {
+        toast({
+          title: 'Error loading dashboard',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [toast]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  const recoveryScore = stats.recoveryProgress || 0;
+  const progressStats = [
+    { label: "Medication Adherence", value: stats.totalMedications > 0 ? Math.round((stats.medicationsTaken / stats.totalMedications) * 100) : 0, color: "bg-secondary" },
+    { label: "Appointments", value: stats.upcomingAppointments > 0 ? 95 : 0, color: "bg-secondary" },
+    { label: "Recovery Progress", value: recoveryScore, color: "bg-secondary" },
   ];
 
   return (
@@ -60,7 +101,7 @@ const Dashboard = () => {
 
       {/* Progress Bars */}
       <div className="space-y-4">
-        {stats.map((stat) => (
+        {progressStats.map((stat) => (
           <div key={stat.label} className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="font-medium text-foreground">{stat.label}</span>
@@ -74,12 +115,14 @@ const Dashboard = () => {
       {/* Action Buttons */}
       <div className="flex gap-4">
         <Button
+          onClick={() => navigate('/history')}
           variant="default"
           className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold rounded-full shadow-md"
         >
           View History
         </Button>
         <Button
+          onClick={() => navigate('/vitals')}
           variant="default"
           className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold rounded-full shadow-md"
         >

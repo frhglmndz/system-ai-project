@@ -122,3 +122,34 @@ export const dashboardAPI = {
   getStats: () => fetchAPI('/dashboard/stats'),
   getDoctorStats: () => fetchAPI('/dashboard/doctor-stats'),
 };
+
+// Unified API object for convenience
+export const api = {
+  setToken: (token: string | null) => {
+    if (token) localStorage.setItem('auth_token', token);
+    else localStorage.removeItem('auth_token');
+  },
+  register: (email: string, password: string, firstName: string, lastName: string) =>
+    authAPI.register({ email, password, firstName, lastName, role: 'patient' }),
+  login: authAPI.login,
+  getCurrentUser: authAPI.getCurrentUser,
+  logout: authAPI.logout,
+  getProfile: profileAPI.get,
+  updateProfile: profileAPI.update,
+  getMedications: medicationAPI.getAll,
+  completeMedication: medicationAPI.markCompleted,
+  getAppointments: appointmentAPI.getAll,
+  getVitals: vitalsAPI.getAll,
+  recordVitals: vitalsAPI.create,
+  getSymptoms: symptomsAPI.getAll,
+  recordSymptom: symptomsAPI.create,
+  getHealthTips: healthTipsAPI.getAll,
+  getSavedHealthTips: healthTipsAPI.getSaved,
+  saveHealthTip: healthTipsAPI.save,
+  getChatMessages: chatAPI.getMessages,
+  sendChatMessage: chatAPI.sendMessage,
+  getDashboardStats: dashboardAPI.getStats,
+  getNotifications: notificationsAPI.getAll,
+  markNotificationRead: notificationsAPI.markRead,
+  getRecoveryPlans: recoveryPlanAPI.getAll,
+};
