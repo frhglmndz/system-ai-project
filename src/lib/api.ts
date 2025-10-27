@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 const getAuthToken = () => localStorage.getItem('auth_token');
 
 // Generic fetch wrapper
-async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+async function fetchAPI(endpoint: string, options: RequestInit = {}, timeoutMs = 12000) {
   const token = getAuthToken();
   
   const headers: HeadersInit = {
@@ -19,17 +19,30 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      throw new Error(error.error || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Request timed out. Backend at ${API_URL} not reachable.`);
+    }
+    throw new Error(err.message || 'Network error. Check your backend server.');
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return response.json();
 }
 
 // Authentication API
